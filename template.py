@@ -1,8 +1,9 @@
 #creating a template for data addition
 
 from pydantic import BaseModel
+from typing import Dict, Any
 
 class DeviceBlueprint(BaseModel):
 
-	NodeID: str
-	data: dict
+	node_id: str
+	data: Dict[str,Any]
