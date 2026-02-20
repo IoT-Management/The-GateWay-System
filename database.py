@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine,Column,Integer,String
-from sqlalchemy.orm import sessionmaker, declaritive_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 #DataBase file creation
 database_url="sqlite:///iot.db"
@@ -8,7 +8,7 @@ eng=create_engine(database_url,connect_args={"check_same_thread": False})
 
 Session=sessionmaker(bind=eng)
 
-Base=declaritive_base()
+Base=declarative_base()
 
 
 
