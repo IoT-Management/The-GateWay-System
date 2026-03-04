@@ -4,7 +4,7 @@ from read import read_all_data,delete_from_db
 import json
 from GateWayDetails import GateWay_ID,GateWay_Location,server_url,post_auth
 
-url=f"{server_url}/{post_auth}"
+url="https://api.yashkriti.online/gateway_send"
 
 def send_to_server():
 	data=read_all_data()
