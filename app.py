@@ -8,20 +8,22 @@ from  GateWayDetails import server_url, post_auth
 from apscheduler.schedulers.background import BackgroundScheduler
 from contextlib import asynccontextmanager
 
-app=FastAPI(lifespan=Start_stop)
-
 sch=BackgroundScheduler()
-
+time_interval=15
 @asynccontextmanager
-async def Start_stop(app:FastAPi):
+async def Start_stop(app:FastAPI):
 	sch.start()
 	yield
-	sch.stop()
+	sch.shutdown()
+
+app=FastAPI(lifespan=Start_stop)
+
 @app.post("/data")
 def rec(packet:DeviceBlueprint ):
 	print(packet.node_id)
 	print(packet.data)
 	TheObj=Give_Obj(packet.node_id,packet.data)
+	msg=None
 	if TheObj:
 		msg=store_in_db(TheObj)
 	return {"status": 200,"message":msg}
@@ -32,5 +34,4 @@ def sendTOserver():
 	sent_status=send_to_server()
 	return {"status":200,"sent_status":sent_status}
 
-sch.add_job(sendTOserver,"interval",seconds=30)
-
+sch.add_job(sendTOserver,"interval",seconds=time_interval,max_instances=1)
