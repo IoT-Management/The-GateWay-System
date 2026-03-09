@@ -1,6 +1,6 @@
 
 
-```
+
 # The-GateWay-System
 
 An **IoT Gateway System** designed to simulate how industrial IoT infrastructures manage and forward sensor data.
@@ -9,7 +9,7 @@ This project acts as a **local gateway between IoT nodes and a central server/cl
 
 The goal of this project is to **replicate industrial IoT architecture in small environments** such as homes, labs, or small research setups.
 
----
+
 
 # Architecture Overview
 
