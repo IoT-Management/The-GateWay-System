@@ -10,6 +10,11 @@ class DeviceTable(Base):
 	__tablename__="Nodes"
 	ID=Column(Integer,primary_key=True,index=True)
 	node_id=Column(String,index=True)
+	node_uid=Column(String,index=True)
+	node_type=Column(String,index=True)
+	node_firmware=Column(String,index=True)
+	node_location=Column(String,index=True)
+	node_plugin=Column(String,index=True)
 	EntryTime=Column(DateTime,default=datetime.utcnow)
 	data=Column(Text)
 

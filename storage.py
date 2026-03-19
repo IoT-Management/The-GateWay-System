@@ -4,10 +4,15 @@ from database import Session
 from models import DeviceTable
 import json
 
-def Give_Obj(id,dat):
+def Give_Obj(the_obj):
 	store=DeviceTable(
-	node_id=id,
-	data=json.dumps(dat)
+	node_id=the_obj.node_id,
+	node_uid=the_obj.node_uid,
+	node_type=the_obj.node_type,
+	node_firmware=the_obj.firmware_ver,
+	node_location=the_obj.location,
+	node_plugin=the_obj.plugin,
+	data=json.dumps(the_obj.data)
 	)
 	return store
 
