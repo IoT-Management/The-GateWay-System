@@ -18,4 +18,19 @@ class DeviceTable(Base):
 	EntryTime=Column(DateTime,default=datetime.utcnow)
 	data=Column(Text)
 
+
+
+class OTAUpdate(Base):
+    __tablename__ = "ota_updates"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    node_id = Column(String, index=True)
+
+    update_url = Column(String)    
+    firmware_path = Column(String) 
+
+    status = Column(String, default="pending") 
+
+
 Base.metadata.create_all(bind=eng)
