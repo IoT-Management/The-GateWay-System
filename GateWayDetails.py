@@ -1,4 +1,4 @@
-GateWay_ID="lab1o5xrt"
-GateWay_Location="Lab 105"
-server_url="https://api.yashkriti.online"
-post_auth="23cv324r5f"
+GateWay_ID=""
+GateWay_Location=""
+server_url=""
+post_auth=""
