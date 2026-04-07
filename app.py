@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
-
+from OTA_manager import check_ota
 from template import DeviceBlueprint
 from storage import Give_Obj, store_in_db
-from database import Base, session
+from database import Base, Session
 from sqlalchemy import Column, Integer, String
 from send import send_to_server
 from GateWayDetails import server_url, post_auth
@@ -30,7 +30,7 @@ async def Start_stop(app: FastAPI):
 
 app = FastAPI(lifespan=Start_stop)
 
-db = session()
+db = Session()
 
 
 OTA_DIR = "OTA_files"
@@ -60,7 +60,7 @@ def sendTOserver():
 
 
 sch.add_job(sendTOserver, "interval", seconds=time_interval, max_instances=1)
-
+sch.add_job(check_ota, "interval", seconds=30, max_instances=1)
 
 @app.get("/ota/{node_id}")
 def send_firmware(node_id: str):
