@@ -3,305 +3,171 @@
 
 # The-GateWay-System
 
-An **IoT Gateway System** designed to simulate how industrial IoT infrastructures manage and forward sensor data.
+> The local intelligence layer of The GateWay System IoT platform.
+> Runs on a Raspberry Pi, BeagleBone Black, or any Linux device — receives data from ESP32 nodes, runs automation plugins, manages OTA updates, and syncs to the cloud.
 
-This project acts as a **local gateway between IoT nodes and a central server/cloud**, buffering data locally and forwarding it when connectivity is available.
+## What is this?
 
-The goal of this project is to **replicate industrial IoT architecture in small environments** such as homes, labs, or small research setups.
+The GateWay System is the "brain" of a local-first IoT architecture. Instead of ESP32 devices connecting directly to the cloud, they talk to this gateway running on your local network.
 
+The gateway handles:
+- Receiving sensor data from multiple ESP32 nodes over HTTP
+- Running automation plugins (e.g. turn on LEDs if temperature > 50°C)
+- Buffering data locally in SQLite when the cloud is unreachable
+- Syncing buffered data to a cloud server every 15 seconds
+- Polling the cloud server for OTA firmware updates every 30 seconds
+- Serving firmware files to ESP32 nodes for OTA installation
+- Sending periodic heartbeats to the cloud server
 
-
-# Architecture Overview
-
+## Architecture
 ```
 
-ESP32 / Arduino / STM32 Nodes
-│
-│ HTTP JSON
-▼
-IoT Gateway (FastAPI)
-(Local Buffer + Scheduler)
-│
-│ Forwarding
-▼
-Central Server (Raspberry Pi / Cloud / AWS)
-│
-▼
-Permanent Database + Dashboard
-
-````
-
----
-
-# Node Layer
-
-IoT nodes are microcontrollers such as:
-
-- ESP32
-- Arduino
-- STM32
-
-These devices send **JSON sensor data via HTTP** to the gateway.
-
-Example packet format:
-
-```json
-{
-  "node_id": "test_node_01",
-  "data": {
-    "temperature": 25,
-    "humidity": 60,
-    "voltage": 3.3
-  }
-}
-````
-
----
-
-# Gateway Layer
-
-The **Gateway** acts as an intermediate system between nodes and the central server.
-
-Responsibilities:
-
-* Receive node data
-* Validate JSON payload
-* Store data locally
-* Forward data to the server periodically
-* Prevent data loss when internet connectivity is unavailable
-
-Gateway software can run on:
-
-* Raspberry Pi
-* BeagleBone
-* Edge devices
-* Mini PCs
-* Local servers
-
-The gateway exposes an endpoint:
+ESP32 Nodes  →  Gateway (This Repo)  →  Cloud Server
+↓
+SQLite Local DB
+↓
+Automation Plugins
 
 ```
-POST /data
+## Tech Stack
+
+- **Python 3**
+- **FastAPI** — REST API server
+- **SQLAlchemy** — ORM with SQLite local database
+- **APScheduler** — Background job scheduling
+- **Uvicorn** — ASGI server
+- **Requests** — Cloud sync HTTP client
+
+## Project Structure
 ```
 
----
-
-# Local Data Buffer
-
-The gateway stores incoming node data in a **local SQLite database**.
-
-This ensures:
-
-* No data loss if the server is offline
-* Reliable forwarding
-* Temporary local storage
-
-Stored fields include:
-
-* node_id
-* timestamp
-* sensor payload
-
----
-
-# Store and Forward System
-
-A background scheduler periodically checks the server connectivity and forwards stored packets.
-
-Workflow:
-
-1. Node sends data
-2. Gateway stores it locally
-3. Scheduler checks server connectivity
-4. If server is reachable:
-
-   * Send stored data
-   * Delete successfully transmitted entries
-
----
-
-# Features
-
-### Current Features
-
-* FastAPI-based gateway
-* JSON data ingestion
-* Local SQLite buffering
-* Scheduled server forwarding
-* Modular storage system
-* Pydantic validation for packets
-
-### Planned Features
-
-* OTA firmware updates for nodes
-* Plugin system for device types
-* Local web dashboard
-* Node authentication
-* Edge analytics
-
----
-
-# Gateway Configuration
-
-Gateway parameters are configured in:
+The-GateWay-System/
+├── app.py               # FastAPI app — main entry point
+├── GateWayDetails.py    # Gateway config (ID, location, server URL)
+├── database.py          # SQLAlchemy engine and session setup
+├── models.py            # DB models: DeviceTable, OTAUpdate
+├── storage.py           # Store incoming node data to SQLite
+├── read.py              # Read and delete records from SQLite
+├── send.py              # Sync buffered data to cloud server
+├── send_check.py        # Heartbeat sender
+├── OTA_manager.py       # Poll cloud for OTA tasks, download firmware
+├── plugin_manager.py    # Dynamic plugin loader
+├── template.py          # Pydantic request schema (DeviceBlueprint)
+├── plugins/
+│   ├── **init**.py
+│   └── temperature.py   # Example: LED trigger on high temperature
+├── OTA_files/           # Downloaded firmware binaries stored here
+└── requirements.txt
 
 ```
-GateWayDetails.py
-```
+## Setup
 
-Example:
-
-```python
-GateWay_ID=""
-GateWay_Location=""
-server_url=""
-post_auth=""
-```
-
-These values allow the gateway to identify itself when communicating with the central server.
-
----
-
-# Installation
-
-Clone the repository
+### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/<your-username>/The-GateWay-System.git
+git clone https://github.com/youruser/The-GateWay-System.git
 cd The-GateWay-System
-```
-
-Create virtual environment
-
-```bash
-python -m venv env
-```
-
-Activate environment
-
-Linux / Mac
-
-```bash
-source env/bin/activate
-```
-
-Windows
-
-```bash
-env\Scripts\activate
-```
-
-Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
----
+### 2. Configure the gateway
 
-# Running the Gateway
+Edit `GateWayDetails.py`:
 
-Start the gateway server
+```python
+GateWay_ID       = "gateway_001"
+GateWay_Location = "home_lab"
+server_url       = "https://your-cloud-server.com"
+post_auth        = "your_auth_endpoint"
+```
+
+### 3. Run the gateway
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
+uvicorn app:app --host 0.0.0.0 --port 9000
 ```
 
-Gateway endpoint
+The gateway is now reachable at `http://iot-gateway.local:9000` if mDNS is configured, or via its local IP.
 
-```
-http://<gateway-ip>:8000/data
-```
+## API Endpoints
 
----
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/data` | Receive sensor payload from an ESP32 node |
+| `GET` | `/ota/{node_id}` | Serve pending firmware to a node |
+| `POST` | `/ota/complete/{node_id}` | Mark OTA update as done |
 
-# ESP32 Test Node
+### Incoming data payload (`POST /data`)
 
-Use this ESP32 code to test communication with the gateway.
-
-```cpp
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
-
-const char* ssid = "Utkarsha-2.4G";
-const char* password = "YOUR_WIFI_PASSWORD";
-
-const char* gateway_url = "http://192.168.1.5:8000/data";
-
-void setup() {
-  Serial.begin(115200);
-
-  WiFi.begin(ssid, password);
-
-  Serial.print("Connecting to WiFi");
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+```json
+{
+  "node_id": "sensor_node_1",
+  "node_uid": "sensor_uuid_001",
+  "node_type": "temperature_sensor",
+  "firmware_ver": "1.0",
+  "location": "room_1",
+  "plugin": "temperature",
+  "data": {
+    "temperature": 52.3
   }
-
-  Serial.println("\nConnected!");
-}
-
-void loop() {
-
-  if (WiFi.status() == WL_CONNECTED) {
-
-    HTTPClient http;
-    http.begin(gateway_url);
-    http.addHeader("Content-Type", "application/json");
-
-    StaticJsonDocument<200> doc;
-
-    doc["node_id"] = "test_node_01";
-
-    JsonObject data = doc.createNestedObject("data");
-
-    data["temperature"] = random(20, 35);
-    data["humidity"] = random(40, 80);
-    data["voltage"] = random(3, 5);
-
-    String json;
-    serializeJson(doc, json);
-
-    Serial.println("Sending:");
-    Serial.println(json);
-
-    int httpResponseCode = http.POST(json);
-
-    Serial.print("Response: ");
-    Serial.println(httpResponseCode);
-
-    http.end();
-  }
-
-  delay(30000);
 }
 ```
 
----
+## Automation Plugins
 
-# Project Status
+Plugins live in the `plugins/` folder and are loaded dynamically based on the `plugin` field in the incoming node payload.
 
-This project is currently **under active development**.
+Each plugin must expose a `process(obj)` function.
 
-Upcoming components include:
+**Example — `plugins/temperature.py`:**
 
-* Plugin architecture
-* Node OTA system
-* Gateway UI
-* Advanced node management
+```python
+def process(obj):
+    data = dict(obj.data)
+    temp = int(data["temperature"])
 
----
+    if temp > 50:
+        # Turn on BeagleBone LEDs as alert
+        for led in leds:
+            with open(led, "w") as f:
+                f.write("1")
+```
 
-# Purpose of the Project
+To add a new plugin:
+1. Create `plugins/your_plugin_name.py`
+2. Implement `def process(obj):`
+3. Set `plugin: "your_plugin_name"` in the node's IoTCore config
 
-The aim of this project is to **learn and replicate real-world IoT infrastructure concepts**, including:
+## Background Jobs
 
-* Edge computing
-* Gateway-based architectures
-* Store-and-forward reliability
-* Device management systems
+| Job | Interval | Description |
+|---|---|---|
+| `sendTOserver()` | Every 15 seconds | Sync buffered SQLite data + send heartbeat to cloud |
+| `check_ota()` | Every 30 seconds | Poll cloud for pending OTA firmware tasks |
+
+## OTA Flow
+
+1. Cloud server registers a firmware update for a target node
+2. Gateway polls the cloud every 30 seconds via `GET /firmware/{location}/{gateway_id}`
+3. Gateway downloads the `.bin` firmware file to `OTA_files/`
+4. Gateway stores the OTA task in SQLite with status `pending`
+5. Node polls `GET /ota/{node_id}` on the gateway
+6. Gateway serves the firmware file and sets status to `in_progress`
+7. Node flashes and reboots, then calls `POST /ota/complete/{node_id}`
+8. Gateway marks the task `done`
+
+## Local-First Design
+
+The gateway buffers all incoming node data in a local SQLite database (`iot.db`). Data is only deleted from the local buffer after the cloud server confirms successful receipt. This means the system continues recording data even when internet is unavailable.
+
+## Part of The GateWay System
+
+- **[IoTCore]** — ESP32 Arduino library (node firmware)
+- **The-GateWay-System** ← You are here
+- **[The-Server-System]** — Cloud server (FastAPI + Dashboard)
+
+## License
+
+MIT
 
 
