@@ -6,6 +6,9 @@
 > The local intelligence layer of The GateWay System IoT platform.
 > Runs on a Raspberry Pi, BeagleBone Black, or any Linux device — receives data from ESP32 nodes, runs automation plugins, manages OTA updates, and syncs to the cloud.
 
+![Gateway Architecture](../reference.png)
+<p style="font-size: xx-small;">This is AI generated image used for visual presentation}</p>
+
 ## What is this?
 
 The GateWay System is the "brain" of a local-first IoT architecture. Instead of ESP32 devices connecting directly to the cloud, they talk to this gateway running on your local network.
