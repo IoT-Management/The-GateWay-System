@@ -7,7 +7,7 @@
 > Runs on a Raspberry Pi, BeagleBone Black, or any Linux device — receives data from ESP32 nodes, runs automation plugins, manages OTA updates, and syncs to the cloud.
 
 ![Gateway Architecture](reference.png)
-<p style="font-size: xx-small;">This is AI generated image used for visual presentation}</p>
+<p style="font-size: xx-small;">This is AI generated image used for visual presentation</p>
 
 ## What is this?
 
